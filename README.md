@@ -1,6 +1,6 @@
 # Go CPTEC
 
-[![GoDoc](https://godoc.org/github.com/murilobsd/cptec?status.svg)](https://godoc.org/github.com/murilobsd/murilobsd/cptec) [![Go Report Card](https://goreportcard.com/badge/github.com/murilobsd/cptec)](https://goreportcard.com/report/github.com/murilobsd/cptec) [![Coverage Status](https://coveralls.io/repos/github/murilobsd/cptec/badge.svg?branch=master)](https://coveralls.io/github/murilobsd/cptec?branch=master)
+[![GoDoc](https://godoc.org/github.com/murilobsd/cptec?status.svg)](https://godoc.org/github.com/murilobsd/cptec) [![Go Report Card](https://goreportcard.com/badge/github.com/murilobsd/cptec)](https://goreportcard.com/report/github.com/murilobsd/cptec) [![Coverage Status](https://coveralls.io/repos/github/murilobsd/cptec/badge.svg?branch=master)](https://coveralls.io/github/murilobsd/cptec?branch=master)
 
 
 <p align="center">

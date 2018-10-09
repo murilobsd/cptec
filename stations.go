@@ -1,6 +1,8 @@
 package cptec
 
 import (
+	"crypto/md5"
+	"encoding/json"
 	"fmt"
 	"log"
 	"regexp"
@@ -37,14 +39,30 @@ type Station struct {
 	Longitude string `json:"longitude"`
 }
 
-func (s Station) String() string {
+// Stations array ...
+type Stations []*Station
+
+// ToBytes convert station to byte
+func (s *Station) ToBytes() []byte {
+	jsonBytes, _ := json.Marshal(s)
+	return jsonBytes
+}
+
+// Hash return md5 of station
+func (s *Station) Hash() string {
+	stationBytes := s.ToBytes()
+	stationHash := fmt.Sprintf("%x", md5.Sum(stationBytes))
+	return stationHash
+}
+
+func (s *Station) String() string {
 	return fmt.Sprintf("ID: %s UF: %s Locality: %s Latitude: %s Longitude: %s", s.ID, s.UF, s.Locality, s.Latitude, s.Longitude)
 }
 
 // GetAll ...
 func (s *StationService) GetAll() ([]*Station, error) {
 	var stations []*Station
-	req, err := s.client.newRequest("GET", pathStations, nil, nil)
+	req, err := s.client.NewRequest("GET", pathStations, nil, nil)
 
 	if err != nil {
 		return nil, err
@@ -72,7 +90,7 @@ func (s *StationService) GetAll() ([]*Station, error) {
 func (s *StationService) Get(station *Station) error {
 	form := make(map[string]string)
 	form["id"] = station.ID
-	req, err := s.client.newRequest("POST", pathFullStations, form, nil)
+	req, err := s.client.NewRequest("POST", pathFullStations, form, nil)
 	if err != nil {
 		return err
 	}
