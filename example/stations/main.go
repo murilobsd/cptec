@@ -1,11 +1,8 @@
-// Copyright 2017 The go-github AUTHORS. All rights reserved.
+// Copyright 2018 Murilo Ijanc. All rights reserved.
 //
 // Use of this source code is governed by a BSD-style
 // license that can be found in the LICENSE file.
 
-// The simple command demonstrates a simple functionality which
-// prompts the user for a GitHub username and lists all the public
-// organization memberships of the specified username.
 package main
 
 import (
@@ -18,17 +15,20 @@ import (
 func FetchStations() ([]*cptec.Station, error) {
 	cptec := cptec.New(nil)
 	stations, err := cptec.Station.GetAll()
+	for _, station := range stations {
+		cptec.Station.Get(station)
+		fmt.Println(station.String())
+	}
 	return stations, err
 }
 
 func main() {
-	stations, err := FetchStations()
-	if err != nil {
-		fmt.Printf("Error: %v\n", err)
-		return
-	}
-
-	for _, station := range stations {
-		fmt.Println(station.String())
-	}
+	cptec := cptec.New(nil)
+	cptec.Station.GetFull()
+	// FetchStations()
+	// stations, err := FetchStations()
+	// if err != nil {
+	// 	fmt.Printf("Error: %v\n", err)
+	// 	return
+	// }
 }

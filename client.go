@@ -6,6 +6,7 @@ import (
 	"net/http"
 	"net/http/cookiejar"
 	"net/url"
+	"strings"
 	"time"
 )
 
@@ -22,6 +23,7 @@ type CPTEC struct {
 	Station   *StationService
 }
 
+// New ...
 func New(httpClient *http.Client) *CPTEC {
 	if httpClient == nil {
 		cookieJar, _ := cookiejar.New(nil)
@@ -35,20 +37,47 @@ func New(httpClient *http.Client) *CPTEC {
 	c := &CPTEC{
 		Client:    httpClient,
 		BaseURL:   url,
-		UserAgent: "Go-INPE-0.1",
+		UserAgent: "Go-CPTEC-0.1",
 	}
 	c.Station = &StationService{client: c}
 
 	return c
 }
 
-func (c *CPTEC) newRequest(method, path string) (req *http.Request, err error) {
+func (c *CPTEC) newRequest(method, path string, data interface{}, header interface{}) (req *http.Request, err error) {
 	rel := &url.URL{Path: path}
 	u := c.BaseURL.ResolveReference(rel)
 
-	req, err = http.NewRequest(method, u.String(), nil)
-	if err != nil {
-		return nil, err
+	if method == "POST" && data != nil {
+		formData, ok := data.(map[string]string)
+		if !ok {
+			return nil, errors.New("Invalid format type data")
+		}
+		form := url.Values{}
+		for k, v := range formData {
+			form.Add(k, v)
+		}
+		req, err = http.NewRequest(method, u.String(), strings.NewReader(form.Encode()))
+		if err != nil {
+			return nil, err
+		}
+		// req.PostForm = form
+		req.Header.Add("Content-Type", "application/x-www-form-urlencoded")
+	} else {
+		req, err = http.NewRequest(method, u.String(), nil)
+		if err != nil {
+			return nil, err
+		}
+	}
+
+	if header != nil {
+		headerData, ok := header.(map[string]string)
+		if !ok {
+			return nil, errors.New("Invalid header")
+		}
+		for k, v := range headerData {
+			req.Header.Add(k, v)
+		}
 	}
 
 	req.Header.Set("Accept", "text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8")

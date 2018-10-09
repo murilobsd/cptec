@@ -2,6 +2,7 @@ package cptec
 
 import (
 	"fmt"
+	"log"
 	"regexp"
 )
 
@@ -9,11 +10,14 @@ import (
 const (
 	// pathStations link to get the list of stations.
 	pathStations = "/PCD/SITE/novo/site/historico/index.php"
+	// pathFullStations link to get full information of stations.
+	pathFullStations = "/PCD/SITE/novo/site/historico/passo2.php"
 )
 
 // These are the constants that can be use
 var (
-	rgStations = `<option value=(?P<ID>\d+)>\d+-(?P<UF>[A-Z]{2})-(?P<Locality>.*?)</option>`
+	rgStations     = `<option value=(?P<ID>\d+)>\d+-(?P<UF>[A-Z]{2})-(?P<Locality>.*?)</option>`
+	rgFullStations = `Latitude:\s+(?P<Latitude>.*?),\s+?Longitude:\s+(?P<Longitude>.*?),`
 )
 
 // StationService ...
@@ -26,19 +30,21 @@ type StationService struct {
 // Information such as location and identification is part of this
 // structure.
 type Station struct {
-	ID       string `json:"id"`
-	UF       string `json:"uf"`
-	Locality string `json:"locality"`
+	ID        string `json:"id"`
+	UF        string `json:"uf"`
+	Locality  string `json:"locality"`
+	Latitude  string `json:"latitude"`
+	Longitude string `json:"longitude"`
 }
 
 func (s Station) String() string {
-	return fmt.Sprintf("ID: %s - UF: %s - Locality: %s", s.ID, s.UF, s.Locality)
+	return fmt.Sprintf("ID: %s UF: %s Locality: %s Latitude: %s Longitude: %s", s.ID, s.UF, s.Locality, s.Latitude, s.Longitude)
 }
 
 // GetAll ...
 func (s *StationService) GetAll() ([]*Station, error) {
 	var stations []*Station
-	req, err := s.client.newRequest("GET", pathStations)
+	req, err := s.client.newRequest("GET", pathStations, nil, nil)
 
 	if err != nil {
 		return nil, err
@@ -60,4 +66,69 @@ func (s *StationService) GetAll() ([]*Station, error) {
 		stations = append(stations, station)
 	}
 	return stations, err
+}
+
+// Get coleta todos
+func (s *StationService) Get(station *Station) error {
+	form := make(map[string]string)
+	form["id"] = station.ID
+	req, err := s.client.newRequest("POST", pathFullStations, form, nil)
+	if err != nil {
+		return err
+	}
+
+	html, err := s.client.do(req)
+
+	if err != nil {
+		return err
+	}
+
+	re := regexp.MustCompile(rgFullStations)
+
+	for _, match := range re.FindAllStringSubmatch(string(html), -1) {
+		station.Latitude = match[1]
+		station.Longitude = match[2]
+	}
+	return nil
+}
+
+func worker(s *StationService, id int, jobs <-chan *Station, results chan<- *Station) {
+	for j := range jobs {
+		s.Get(j)
+		results <- j
+	}
+}
+
+// GetFull ...
+func (s *StationService) GetFull() ([]*Station, error) {
+	stations, err := s.GetAll()
+	var stationsFuture []*Station
+	if err != nil {
+		return nil, err
+	}
+
+	fmt.Println("Número de Estações: ", len(stations))
+
+	jobs := make(chan *Station, len(stations))
+	results := make(chan *Station, len(stations))
+
+	for w := 1; w <= 5; w++ {
+		go worker(s, w, jobs, results)
+	}
+
+	for _, station := range stations {
+		jobs <- station
+	}
+	close(jobs)
+
+	for range stations {
+		station := <-results
+		stationsFuture = append(stationsFuture, station)
+	}
+
+	if err := Save("./data/stations.json", stationsFuture); err != nil {
+		log.Fatalln(err)
+	}
+
+	return stationsFuture, nil
 }
