@@ -2,11 +2,14 @@ package cptec
 
 import (
 	"bytes"
-	"crypto/md5"
 	"encoding/json"
 	"io"
+	"log"
 	"os"
+	"regexp"
+	"strings"
 	"sync"
+	"time"
 )
 
 var lock sync.Mutex
@@ -60,22 +63,56 @@ func Load(path string, v interface{}) error {
 	return Unmarshal(f, v)
 }
 
-// Hash ....
-func Hash(arr []interface{}) [16]byte {
-	arrBytes := []byte{}
-	for _, item := range arr {
-		jsonBytes, _ := json.Marshal(item)
-		arrBytes = append(arrBytes, jsonBytes...)
-	}
-	return md5.Sum(arrBytes)
+// Trim space
+func Trim(value string) string {
+	return strings.TrimSpace(value)
 }
 
-// Compare ...
-func Compare(a, b []byte) bool {
-	a = append(a, b...)
-	c := 0
-	for _, x := range a {
-		c ^= int(x)
+// FixCityState ajusta o nome da cidade e do estado
+func FixCityState(cityValue string) (string, string) {
+	cityClean := CleanString(cityValue)
+	splitCity := strings.Split(cityClean, "/")
+	if len(splitCity) != 2 {
+		log.Fatalf("split city name error: %s", cityValue)
 	}
-	return c == 0
+	return Trim(splitCity[0]), Trim(splitCity[1])
+}
+
+// ParserDate parsea o dado de data
+func ParserDate(date string) (time.Time, error) {
+	layout := "02/01/2006"
+	t, err := time.Parse(layout, date)
+	if err != nil {
+		return time.Time{}, ErrParseDate
+	}
+	return t, nil
+}
+
+// ParserTime parsea o dade de útil para o horário do nascer
+// do sol e o por do sol
+func ParserTime(timestr string) (time.Time, error) {
+	layout := "15:04"
+	t, err := time.Parse(layout, timestr)
+	if err != nil {
+		return time.Time{}, nil
+	}
+	return t, nil
+}
+
+// PeriodToTime convert period to time
+func PeriodToTime(period string) time.Time {
+	if period == "Manha" {
+		return time.Time{}
+	} else if period == "Tarde" {
+		return time.Time{}
+	} else {
+		return time.Time{}
+	}
+}
+
+// CleanString Remove no caracteres
+func CleanString(value string) string {
+	re := regexp.MustCompile(`[|]`)
+	s := re.ReplaceAllLiteralString(value, "")
+	return s
 }
