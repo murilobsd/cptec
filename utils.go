@@ -7,6 +7,7 @@ import (
 	"log"
 	"os"
 	"regexp"
+	"strconv"
 	"strings"
 	"sync"
 	"time"
@@ -79,24 +80,25 @@ func FixCityState(cityValue string) (string, string) {
 }
 
 // ParserDate parsea o dado de data
-func ParserDate(date string) (time.Time, error) {
+func ParserDate(date string) (*time.Time, error) {
 	layout := "02/01/2006"
 	t, err := time.Parse(layout, date)
 	if err != nil {
-		return time.Time{}, ErrParseDate
+		return nil, ErrParseDate
 	}
-	return t, nil
+	return &t, nil
 }
 
 // ParserTime parsea o dade de útil para o horário do nascer
 // do sol e o por do sol
-func ParserTime(timestr string) (time.Time, error) {
+func ParserTime(timestr string) (*time.Time, error) {
+	timestr = Trim(timestr)
 	layout := "15:04"
 	t, err := time.Parse(layout, timestr)
 	if err != nil {
-		return time.Time{}, nil
+		return nil, nil
 	}
-	return t, nil
+	return &t, nil
 }
 
 // PeriodToTime convert period to time
@@ -112,7 +114,33 @@ func PeriodToTime(period string) time.Time {
 
 // CleanString Remove no caracteres
 func CleanString(value string) string {
-	re := regexp.MustCompile(`[|]`)
+	re := regexp.MustCompile(`[|°%]+`)
 	s := re.ReplaceAllLiteralString(value, "")
 	return s
+}
+
+//FindLat pesquisa a latitude
+func FindLat(value string) {}
+
+//FindLon pesquisa a longitude
+func FindLon(value string) {}
+
+//ToFloat converte string para float64, caso retorne erro o valor -999.0 é retornado.
+func ToFloat(number string) float64 {
+	number = Trim(CleanString(number))
+	n, err := strconv.ParseFloat(number, 64)
+	if err != nil {
+		return float64(-999.0)
+	}
+	return n
+}
+
+//ToInt converte string para int64, caso retorne erro o valor -999 é retornado.
+func ToInt(number string) int64 {
+	number = Trim(CleanString(number))
+	n, err := strconv.ParseInt(number, 10, 64)
+	if err != nil {
+		return int64(-999)
+	}
+	return n
 }

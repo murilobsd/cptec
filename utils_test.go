@@ -21,7 +21,7 @@ func TestFixCityName(t *testing.T) {
 func TestParseDate(t *testing.T) {
 	t1 := time.Date(2018, time.October, 9, 0, 0, 0, 0, time.UTC)
 	t2, _ := ParserDate("09/10/2018")
-	if t1 != t2 {
+	if t1.Day() != t2.Day() {
 		t.Errorf("parse date: %s expected: %s", t1.String(), t2.String())
 	}
 }

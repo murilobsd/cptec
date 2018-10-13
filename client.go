@@ -40,7 +40,8 @@ type CPTEC struct {
 	UserAgent string
 
 	// Services used for talking to different parts of the CPTEC.
-	Station *StationService
+	Station  *StationService
+	Forecast *ForecastService
 }
 
 // New returns a new CPTEC client. If a nil httpClient is
@@ -62,6 +63,7 @@ func New(httpClient *http.Client) *CPTEC {
 	}
 
 	c.Station = &StationService{client: c}
+	c.Forecast = &ForecastService{client: c}
 
 	return c
 }
