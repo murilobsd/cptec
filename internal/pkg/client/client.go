@@ -1,31 +1,22 @@
-package cptec
+package client
 
 import (
 	"errors"
 	"io/ioutil"
 	"net/http"
-	"net/http/cookiejar"
 	"net/url"
-	"strings"
 	"time"
 )
 
 const (
-	defaultBaseURL = "http://sinda.crn.inpe.br"
+	defaultBaseURL = "http://servicos.cptec.inpe.br"
 	userAgent      = "go-cptec"
-
-	// Headers
-
-	// headerAccept header Accept
-	headerAccept = "text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8"
-
-	// headerContentTypePost header content type when post data
-	headerContentTypePost = "application/x-www-form-urlencoded"
 )
 
 // These are the errors that can be returned
 var (
-	ErrStatusCode = errors.New("Http invalid status code")
+	errStatusCode    = errors.New("Http invalid status code")
+	errInvalidHeader = errors.New("Invalid header")
 )
 
 // CPTEC manages communication with the CPTEC.
@@ -40,17 +31,15 @@ type CPTEC struct {
 	UserAgent string
 
 	// Services used for talking to different parts of the CPTEC.
-	Station  *StationService
-	Forecast *ForecastService
+	// Station  *StationService
+	// Forecast *ForecastService
 }
 
 // New returns a new CPTEC client. If a nil httpClient is
 // provided, http.DefaultClient will be used.
 func New(httpClient *http.Client) *CPTEC {
 	if httpClient == nil {
-		cookieJar, _ := cookiejar.New(nil)
 		httpClient = http.DefaultClient
-		httpClient.Jar = cookieJar
 		httpClient.Timeout = time.Duration(10 * time.Second)
 	}
 
@@ -62,8 +51,8 @@ func New(httpClient *http.Client) *CPTEC {
 		UserAgent: userAgent,
 	}
 
-	c.Station = &StationService{client: c}
-	c.Forecast = &ForecastService{client: c}
+	// c.Station = &StationService{client: c}
+	// c.Forecast = &ForecastService{client: c}
 
 	return c
 }
@@ -73,26 +62,10 @@ func (c *CPTEC) NewRequest(method, path string, data interface{}, header interfa
 	rel := &url.URL{Path: path}
 	u := c.BaseURL.ResolveReference(rel)
 
-	if method == "POST" && data != nil {
-		formData, ok := data.(map[string]string)
-		if !ok {
-			return nil, errors.New("Invalid format type data")
-		}
-		form := url.Values{}
-		for k, v := range formData {
-			form.Add(k, v)
-		}
-		req, err = http.NewRequest(method, u.String(), strings.NewReader(form.Encode()))
-		if err != nil {
-			return nil, err
-		}
-		// req.PostForm = form
-		req.Header.Add("Content-Type", headerContentTypePost)
-	} else {
-		req, err = http.NewRequest(method, u.String(), nil)
-		if err != nil {
-			return nil, err
-		}
+	req, err = http.NewRequest(method, u.String(), nil)
+
+	if err != nil {
+		return nil, err
 	}
 
 	if header != nil {
@@ -105,7 +78,6 @@ func (c *CPTEC) NewRequest(method, path string, data interface{}, header interfa
 		}
 	}
 
-	req.Header.Set("Accept", headerAccept)
 	req.Header.Set("User-Agent", c.UserAgent)
 
 	return req, nil
@@ -130,6 +102,6 @@ func (c *CPTEC) do(req *http.Request) ([]byte, error) {
 
 		return body, nil
 	}
-	return []byte(""), ErrStatusCode
+	return nil, errStatusCode
 
 }
