@@ -17,4 +17,10 @@ func main() {
 	for _, loc := range locs.Localities {
 		fmt.Println(loc.String())
 	}
+
+	station, _, err := client.Station.Get("SBGR")
+	if err != nil {
+		panic(err)
+	}
+	fmt.Println(station)
 }

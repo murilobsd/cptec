@@ -38,6 +38,7 @@ type Client struct {
 	commom service
 
 	Locality *LocalityService
+	Station  *StationService
 }
 
 type service struct {
@@ -77,6 +78,7 @@ func NewClient(httpClient *http.Client) *Client {
 	}
 	c.commom.client = c
 	c.Locality = &LocalityService{client: c}
+	c.Station = &StationService{client: c}
 	return c
 }
 
